@@ -1,0 +1,64 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String       @id @default(cuid())
+  name          String?
+  email         String       @unique
+  password      String?     
+  websites      Website[]
+  subscription  Subscription?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+model Website {
+  id          String        @id @default(cuid())
+  name        String
+  slug        String        @unique       // for public URL
+  prompt      String        // user input for AI generation
+  layout      Json          // JSON returned from AI
+  sections    Section[]     // optional: break layout into sections
+  user        User          @relation(fields: [userId], references: [id])
+  userId      String
+  published   Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model Section {
+  id          String     @id @default(cuid())
+  type        String     // e.g., "hero", "features", "pricing"
+  content     Json       // dynamic data for section
+  order       Int        // order in page
+  website     Website    @relation(fields: [websiteId], references: [id])
+  websiteId   String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Subscription {
+  id          String     @id @default(cuid())
+  user        User       @relation(fields: [userId], references: [id])
+  userId      String     @unique
+  plan        Plan       // ENUM: Free, Pro, Enterprise
+  stripeId    String?    // Stripe subscription ID
+  status      String?    // active, canceled, past_due
+  startDate   DateTime
+  endDate     DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+enum Plan {
+  FREE
+  PRO
+  ENTERPRISE
+}
